@@ -121,15 +121,23 @@
           closeBtn.classList.add("enabled");
           closeBtn.textContent = "Tutup";
         }
-      }, 1700);
+      }, 500);
+      
+      const delayMs = 1000;
 
-      closeBtn.addEventListener("click", () => {
-        if (window.history.length > 1) {
-          window.close();
-        } else {
-          window.location.href = "/";
-        }
-      });
+closeBtn.addEventListener("click", () => {
+  closeBtn.disabled = true;                 // optional: biar gak spam klik
+  closeBtn.textContent = "Wait..";      // optional
+
+  setTimeout(() => {
+    if (window.history.length > 1) {
+      window.close();
+    } else {
+      window.location.href = "#";
+    }
+  }, delayMs);
+});
+
 
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && !closeBtn.disabled) closeBtn.click();
