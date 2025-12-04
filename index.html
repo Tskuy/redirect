@@ -3,15 +3,44 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dual Iframe 50/50 Atas Bawah + Close Countdown Overlay</title>
+  <title>Dual Iframe 50/50 + Overlay — Ghibli Green</title>
+
+  <!-- Font hangat & membulat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet" />
 
   <style>
+    /* =========================
+       Palet & token gaya Ghibli Green
+       ========================= */
     :root{
-      --blur-amount: 4px;
+      /* Hijau lembut & alami */
+      --leaf-50:#f0fff4;
+      --leaf-100:#e6f7ec;
+      --leaf-150:#d9f2e2;
+      --leaf-200:#c7e9d3;
+      --leaf-300:#aee0c1;
+      --leaf-400:#95d4ac;
+      --moss-600:#2e5c49;
+      --moss-700:#244a3b;
+      --shadow:#121517;
+
+      /* Komponen & efek */
+      --blur-amount: 6px;
       --btn-radius: 999px;
-      --btn-bg: rgba(10,10,12,.85);
-      --btn-border: rgba(255,255,255,.25);
-      --btn-shadow: 0 14px 40px rgba(0,0,0,.45);
+      --btn-bg: rgba(36, 74, 59, .88);     /* moss gelap */
+      --btn-border: rgba(255,255,255,.35);
+      --btn-shadow: 0 18px 50px rgba(18,21,23,.35);
+      --glass-stroke: rgba(255,255,255,.22);
+      --paper:#fffdf7;
+
+      /* Grain halus */
+      --grain: url("data:image/svg+xml;utf8,\
+      <svg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'>\
+      <filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='1' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='table' tableValues='0 .015 .05 .08 .015 0'/></feComponentTransfer></filter>\
+      <rect width='100%' height='100%' filter='url(%23g)'/>\
+      </svg>");
     }
 
     html, body{
@@ -19,90 +48,200 @@
       margin:0;
       padding:0;
       overflow:hidden;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#000;
+      font-family: "Nunito", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--moss-700);
+      background:
+        radial-gradient(1200px 800px at 50% -10%, var(--leaf-100), var(--leaf-150) 60%, var(--leaf-200)) fixed;
     }
 
-    /* Container dua iframe 50/50 vertikal (atas–bawah) */
+    /* Latar vignette + grain */
+    .ghibli-bg{
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(1200px 700px at 50% 110%, rgba(0,0,0,.28), transparent 55%),
+        radial-gradient(1200px 700px at 50% -10%, rgba(0,0,0,.14), transparent 55%);
+      mix-blend-mode: multiply;
+    }
+    .ghibli-grain{
+      position: fixed; inset: -20%; z-index: 0; pointer-events: none;
+      background-image: var(--grain);
+      background-size: 280px 280px;
+      opacity: .16;
+      animation: grainShift 18s steps(2) infinite;
+    }
+    @keyframes grainShift{ 0%{transform:translate3d(0,0,0)} 50%{transform:translate3d(-2%,1%,0)} 100%{transform:translate3d(0,0,0)} }
+
+    /* Daun mengambang (awan hijau) */
+    .ambient{
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    .leaf{
+      position: absolute; width: 120px; height: 68px; border-radius: 80px;
+      background:
+        radial-gradient(50px 26px at 40% 60%, rgba(255,255,255,.85), rgba(255,255,255,.12) 60%, transparent 70%),
+        radial-gradient(60px 30px at 60% 40%, rgba(255,255,255,.75), rgba(255,255,255,.10) 60%, transparent 70%),
+        linear-gradient(180deg, rgba(149,212,172,.25), rgba(149,212,172,.08));
+      filter: blur(1px);
+      opacity: .28;
+      animation: drift var(--dur, 32s) linear infinite;
+    }
+    .leaf:nth-child(1){ left:12%; top:14%; --dur: 34s; transform: scale(1.0); }
+    .leaf:nth-child(2){ left:72%; top:18%; --dur: 36s; transform: scale(1.1); }
+    .leaf:nth-child(3){ left:24%; top:36%; --dur: 30s; transform: scale(.92); }
+    .leaf:nth-child(4){ left:78%; top:44%; --dur: 38s; transform: scale(1.05); }
+    .leaf:nth-child(5){ left:55%; top:62%; --dur: 40s; transform: scale(1.18); }
+    .leaf:nth-child(6){ left:16%; top:74%; --dur: 37s; transform: scale(.96); }
+    @keyframes drift{
+      0%{ transform: translateX(0) translateY(0) scale(1) rotate(0.001deg); }
+      50%{ transform: translateX(-7vw) translateY(3vh) scale(1) rotate(0.001deg); }
+      100%{ transform: translateX(0) translateY(0) scale(1) rotate(0.001deg); }
+    }
+
+    /* Util */
+    .hidden{ display:none !important; }
+
+    /* =========================
+       Konten utama (belakang overlay)
+       ========================= */
+
+    /* Space iklan awal (pre-click) */
+    .ad-wrap{
+      position: fixed; inset: 0; z-index: 1; /* di belakang overlay */
+      display: grid; place-items: center;
+      padding: clamp(16px, 4vw, 36px);
+    }
+    .ad-frame{
+      width: min(92vw, 1000px); max-width: 100%;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.28)) border-box;
+      box-shadow: 0 30px 60px rgba(18,21,23,.25), inset 0 0 0 1px var(--glass-stroke);
+      backdrop-filter: blur(10px) saturate(118%);
+      -webkit-backdrop-filter: blur(10px) saturate(118%);
+      padding: clamp(12px, 2.6vw, 20px);
+    }
+    .ad-inner > div{ width: 100%; }
+
+    /* Dua iframe 50/50 */
     .iframe-split{
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      width: 100vw;
-      height: 100vh;
-      background:#000;
-      z-index: 1;
+      position: fixed; inset: 0; z-index: 1;
+      display: flex; flex-direction: column;
+      width: 100vw; height: 100vh;
+      background: linear-gradient(180deg, var(--leaf-150), var(--leaf-200));
     }
-
     .half-iframe{
       flex: 1 1 50%;
-      width: 100vw;
-      height: 50vh;
-      border: 0;
-      display:block;
-      background:#000;
+      width: 100vw; height: 50vh; border: 0; display:block; background:#000;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
     }
 
+    /* =========================
+       Overlay (kabut hijau + dialog)
+       ========================= */
     .blur-layer{
-      position: fixed;
-      inset: 0;
-      z-index: 2;
-      background: rgba(0,0,0,.18);
-      backdrop-filter: blur(var(--blur-amount));
-      -webkit-backdrop-filter: blur(var(--blur-amount));
-      pointer-events: none;
+      position: fixed; inset: 0; z-index: 2; pointer-events: none;
+      background:
+        radial-gradient(1200px 600px at 50% 0%, rgba(255,255,255,.18), rgba(255,255,255,.04) 60%),
+        rgba(167, 217, 187, .14);
+      backdrop-filter: blur(var(--blur-amount)) saturate(116%);
+      -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(116%);
     }
 
     .close-wrap{
-      position: fixed;
-      inset: 0;
-      z-index: 3;
-      display:grid;
-      place-items:center;
+      position: fixed; inset: 0; z-index: 3;
+      display: grid; place-items: center;
+      padding: 16px;
+    }
+
+    /* Stack: gambar atas, tombol, gambar bawah */
+    .close-stack{
+      display: flex; flex-direction: column; align-items: center;
+      gap: clamp(12px, 2vw, 18px);
+      max-width: 96vw; z-index: 3;
+    }
+
+    .photo-frame{
+      display: inline-block;
+      padding: clamp(6px, 1.2vw, 10px);
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.3)),
+        linear-gradient(180deg, rgba(149,212,172,.25), rgba(149,212,172,.08));
+      box-shadow: 0 16px 40px rgba(18,21,23,.25), inset 0 0 0 1px var(--glass-stroke);
+      backdrop-filter: blur(6px) saturate(120%);
+      -webkit-backdrop-filter: blur(6px) saturate(120%);
+    }
+
+    .close-img{
+      display:block;
+      max-width: min(92vw, 880px);
+      max-height: 38vh;          /* tetap jaga komposisi */
+      height: auto; width: auto; object-fit: contain;
+      border-radius: 10px;
+      background: var(--paper);
+      box-shadow: 0 10px 30px rgba(18,21,23,.28);
     }
 
     .close-btn{
       appearance: none;
       border: 1px solid var(--btn-border);
-      background: var(--btn-bg);
-      color:#fff;
-      padding: 14px 22px;
-      font-size: 15px;
-      font-weight: 700;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.02)),
+        var(--btn-bg);
+      color:#eaffef;
+      padding: 14px 26px;
+      font-size: 16px; font-weight: 800; letter-spacing: .2px;
       border-radius: var(--btn-radius);
-      box-shadow: var(--btn-shadow);
-      cursor: not-allowed;
-      opacity: .65;
-      transition: .15s ease;
-      text-align:center;
-      min-width: 160px;
+      box-shadow: var(--btn-shadow), inset 0 1px 0 rgba(255,255,255,.25);
+      cursor: not-allowed; opacity: .7;
+      transition: transform .15s ease, background .2s ease, opacity .2s ease;
+      min-width: 176px; text-align:center;
     }
-    .close-btn.enabled{
-      cursor: pointer;
-      opacity: 1;
-    }
+    .close-btn.enabled{ cursor: pointer; opacity: 1; }
     .close-btn.enabled:hover{
       transform: translateY(-1px);
-      background: rgba(20,20,24,.95);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06)),
+        rgba(34, 84, 63, .95);
     }
+    .close-btn.enabled:active{ transform: translateY(0); }
 
     @supports(padding: max(0px)){
-      .close-wrap{
-        padding-bottom: env(safe-area-inset-bottom);
-      }
+      .close-wrap{ padding-bottom: env(safe-area-inset-bottom); }
     }
   </style>
 </head>
 
 <body>
+  <!-- Latar & efek -->
+  <div class="ghibli-bg" aria-hidden="true"></div>
+  <div class="ghibli-grain" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true">
+    <span class="leaf"></span><span class="leaf"></span><span class="leaf"></span>
+    <span class="leaf"></span><span class="leaf"></span><span class="leaf"></span>
+  </div>
+
+  <!-- ========== KONTEN UTAMA (di belakang overlay) ========== -->
+
+  <!-- Space iklan: tampil sebelum klik pertama; diganti oleh iframe -->
+  <div class="ad-wrap" id="ad-wrap">
+    <div class="ad-frame ad-inner">
+      <script
+        async="async"
+        data-cfasync="false"
+        src="//pl16536413.effectivegatecpm.com/06b32a9dee2278ab5c9355d8c9b997ca/invoke.js"
+      ></script>
+      <div id="container-06b32a9dee2278ab5c9355d8c9b997ca"></div>
+    </div>
+  </div>
+
   <!-- Dua iframe 50/50 atas–bawah, src di-load setelah klik pertama -->
-  <div class="iframe-split" id="iframe-container">
+  <div class="iframe-split hidden" id="iframe-container">
     <iframe
       id="iframe-top"
       class="half-iframe"
       src="about:blank"
-      data-src="https://taxdifferenceinvestor.com/rigxzxmw4?key=1083746753524088ad6b003868517a0e"            
+      data-src="https://taxdifferenceinvestor.com/rigxzxmw4?key=1083746753524088ad6b003868517a0e"
       title="Iframe Atas"
       loading="eager"
       referrerpolicy="no-referrer-when-downgrade"
@@ -113,7 +252,7 @@
       id="iframe-bottom"
       class="half-iframe"
       src="about:blank"
-      data-src="https://taxdifferenceinvestor.com/rigxzxmw4?key=1083746753524088ad6b003868517a0e"            
+      data-src="https://taxdifferenceinvestor.com/rigxzxmw4?key=1083746753524088ad6b003868517a0e"
       title="Iframe Bawah"
       loading="eager"
       referrerpolicy="no-referrer-when-downgrade"
@@ -121,22 +260,48 @@
     ></iframe>
   </div>
 
+  <!-- ========== OVERLAY ========== -->
   <div class="blur-layer" aria-hidden="true"></div>
 
   <div class="close-wrap" role="dialog" aria-modal="true" aria-label="Close overlay">
-    <button id="close-btn" class="close-btn" type="button" disabled>
-      Tutup (3)
-    </button>
+    <div class="close-stack" aria-live="polite">
+      <!-- Gambar atas dalam frame -->
+      <span class="photo-frame">
+        <img
+          class="close-img"
+          alt="Gambar atas"
+          src="https://hisoka.net/file/Search-Bar-Instagram-Post_20251204_165601_0000.png"
+          loading="eager"
+        />
+      </span>
+
+      <!-- Tombol tutup -->
+      <button id="close-btn" class="close-btn" type="button" disabled>
+        Tutup (3)
+      </button>
+
+      <!-- Gambar bawah dalam frame -->
+      <span class="photo-frame">
+        <img
+          class="close-img"
+          alt="Gambar bawah"
+          src="https://hisoka.net/file/IMG-20251128-WA0002.jpg"
+          loading="eager"
+        />
+      </span>
+    </div>
   </div>
 
   <script>
     (() => {
       const closeBtn = document.getElementById("close-btn");
+      const iframeContainer = document.getElementById("iframe-container");
+      const adWrap = document.getElementById("ad-wrap");
 
       /* ===========================
          1) Countdown tombol Tutup
          =========================== */
-      let t = 1;
+      let t = 1; // jika butuh 3 detik nyata: set t=3 dan interval ke 1000
       closeBtn.textContent = `Tutup (${t})`;
 
       const timer = setInterval(() => {
@@ -147,84 +312,83 @@
           clearInterval(timer);
           closeBtn.disabled = false;
           closeBtn.classList.add("enabled");
-          closeBtn.textContent = "Tutup";
+          closeBtn.textContent = "Lewati";
         }
       }, 10);
 
       const delayMs = 1500;
 
       function smartClose() {
-        // Coba hard-close dulu (akan berhasil kalau tab dibuka dari window.open)
+        // Coba hard-close (berhasil jika tab dibuka via window.open)
         window.open('', '_self');
         window.close();
 
-        // Kalau sampai sini masih jalan, berarti close kemungkinan gagal → fallback
+        // Fallback jika gagal close
         setTimeout(() => {
-          // Jika masih "hidup", lakukan back/redirect
-          // (timer tidak akan dieksekusi kalau window benar-benar tertutup)
           if (!document.hidden) {
             if (window.history.length > 1) {
               history.back();
             } else {
-              // bisa diganti ke URL lain jika mau
               window.close();
             }
           }
         }, 200);
       }
 
-      closeBtn.addEventListener("click", () => {
-        if (closeBtn.disabled) return;
+      /* ===========================
+         2) Alur tutup yang bisa dipanggil dari mana saja
+         =========================== */
+      let hasTriggeredClose = false;
+      function triggerCloseFlow() {
+        if (hasTriggeredClose) return;
+        hasTriggeredClose = true;
         closeBtn.disabled = true;
         closeBtn.textContent = "Wait..";
+        setTimeout(() => { smartClose(); }, delayMs);
+      }
 
-        setTimeout(() => {
-          smartClose();
-        }, delayMs);
+      closeBtn.addEventListener("click", () => {
+        if (closeBtn.disabled) return;
+        triggerCloseFlow();
       });
 
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && !closeBtn.disabled) closeBtn.click();
+        if (e.key === "Escape" && !closeBtn.disabled) triggerCloseFlow();
       });
 
       /* ==========================================
-         2) Load iframe hanya saat klik pertama
+         3) Load iframe & ganti space iklan pada klik pertama
+            + sekaligus memicu alur tutup
          ========================================== */
-
       const loadIframesOnFirstClick = () => {
+        // Sembunyikan iklan, tampilkan iframe
+        if (adWrap && !adWrap.classList.contains("hidden")) adWrap.classList.add("hidden");
+        if (iframeContainer && iframeContainer.classList.contains("hidden")) iframeContainer.classList.remove("hidden");
+
+        // Lazy-load iframe dari data-src
         const lazyIframes = document.querySelectorAll("iframe[data-src]");
         lazyIframes.forEach((frame) => {
           const url = frame.getAttribute("data-src");
-          if (url && frame.src === "about:blank") {
-            frame.src = url;
-          }
+          if (url && frame.src === "about:blank") frame.src = url;
         });
       };
 
-      // Listener sekali saja, klik pertama di mana pun di dokumen
-      document.addEventListener(
-        "click",
-        () => {
-          loadIframesOnFirstClick();
-        },
-        { once: true }
-      );
+      // Klik pertama di mana pun → ganti iklan→iframe dan TRIGGER close flow
+      document.addEventListener("click", () => {
+        loadIframesOnFirstClick();
+        triggerCloseFlow();  // memicu alur tutup meski tombol masih disabled
+      }, { once: true });
 
       /* ==========================================
-         3) Blokir popup / new tab sebisa mungkin
+         4) Blokir popup / tab baru sebisa mungkin
          ========================================== */
-
-      // Cegah <a target="_blank"> di dokumen utama
       document.addEventListener("click", (e) => {
         const link = e.target.closest("a[target='_blank']");
-        if (link) {
-          e.preventDefault();
-        }
+        if (link) e.preventDefault();
       });
-
-      // Popup dari dalam iframe:
-      // diblok lewat sandbox TANPA "allow-popups" di atribut iframe di atas.
+      // Popup dari dalam iframe diblok via sandbox tanpa "allow-popups".
     })();
   </script>
 </body>
 </html>
+
